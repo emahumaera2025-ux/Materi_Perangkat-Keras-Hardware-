@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKPD Interaktif Sistem Komputer</title>
+    
+    <!-- Memuat Tailwind CSS untuk styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Mengatur Import Map untuk React dan Lucide Icons agar bisa di-import langsung di browser -->
+    <script type="importmap">
+    {
+        "imports": {
+            "react": "https://esm.sh/react@18.2.0",
+            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+            "lucide-react": "https://esm.sh/lucide-react@0.292.0"
+        }
+    }
+    </script>
+    
+    <!-- Memuat Babel untuk menerjemahkan kode React/JSX di browser -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Memuat html2pdf untuk fitur print PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up {
+            animation: fadeInUp 0.4s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+    
+    <!-- Di sinilah aplikasi React akan dimuat -->
+    <div id="root"></div>
+
+    <!-- Script Utama (Menggunakan type="text/babel" agar diterjemahkan oleh Babel) -->
+    <script type="text/babel" data-type="module">
+        import React, { useState } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { Search, Monitor, Cpu, HardDrive, Keyboard as KeyboardIcon, CheckCircle, AlertTriangle, Play, GripVertical, FileText, User, Printer, Send, Image as ImageIcon, Target, ListChecks } from 'lucide-react';
+
+        const dataSkenario = [
+          { id: 1, masalah: "Printer tidak mengeluarkan kertas saat mencetak sertifikat.", perangkat: ["Keyboard", "Mouse", "Monitor", "CPU", "Printer", "HDD/SSD"] },
+          { id: 2, masalah: "Hasil scan dokumen tidak muncul di layar monitor.", perangkat: ["Scanner", "CPU", "Monitor", "Keyboard", "Mouse", "HDD/SSD"] },
+          { id: 3, masalah: "Suara tidak keluar saat memutar video presentasi.", perangkat: ["Keyboard", "Mouse", "Monitor", "Speaker", "CPU", "HDD/SSD"] },
+          { id: 4, masalah: "Webcam tidak terdeteksi saat video call.", perangkat: ["Keyboard", "Mouse", "Monitor", "Speaker", "Webcam", "CPU", "HDD/SSD"] },
+          { id: 5, masalah: "Game berjalan lambat dan patah-patah.", perangkat: ["Keyboard", "Mouse", "Monitor", "Gamepad", "GPU", "CPU", "RAM/SSD"] },
+          { id: 6, masalah: "Barcode tidak terbaca di mesin kasir.", perangkat: ["Barcode Scanner", "CPU", "Keyboard", "Mouse", "Monitor", "HDD/SSD"] },
+          { id: 7, masalah: "Garis gambar tidak muncul saat menggambar dengan digitizer.", perangkat: ["Digitizer", "CPU", "GPU", "Monitor", "Keyboard", "Mouse", "HDD/SSD"] },
+          { id: 8, masalah: "Plotter tidak mengeluarkan kertas desain ukuran besar.", perangkat: ["Plotter", "CPU", "Keyboard", "Mouse", "Monitor", "HDD/SSD"] },
+          { id: 9, masalah: "Proyektor menampilkan \"No Signal\" saat presentasi.", perangkat: ["Mouse", "CPU", "Proyektor", "Keyboard", "Monitor", "HDD/SSD"] },
+          { id: 10, masalah: "Data hilang setelah flashdisk dicabut.", perangkat: ["Flashdisk", "CPU", "Keyboard", "Mouse", "Monitor"] },
+          { id: 11, masalah: "Kartu memori tidak terbaca di komputer.", perangkat: ["Card Reader", "CPU", "Memory Card", "Monitor", "Mouse"] },
+          { id: 12, masalah: "DVD tidak terbaca saat ingin menonton film.", perangkat: ["CD/DVD Drive", "CPU", "GPU", "Speaker", "Monitor", "HDD/SSD"] },
+          { id: 13, masalah: "Hard disk eksternal tidak terdeteksi.", perangkat: ["External HDD", "CPU", "Monitor", "Keyboard", "Mouse"] },
+          { id: 14, masalah: "Printer jaringan tidak ditemukan saat mencetak.", perangkat: ["Network Storage", "HDD", "CPU", "Printer", "Keyboard", "Mouse", "Monitor"] },
+          { id: 15, masalah: "Light pen tidak menggerakkan kursor.", perangkat: ["Light Pen", "GPU", "Monitor", "HDD/SSD"] },
+          { id: 16, masalah: "Trackball tidak merespon saat digunakan.", perangkat: ["Trackball", "CPU", "Monitor", "HDD/SSD"] },
+          { id: 17, masalah: "Mesin absensi sidik jari gagal mengenali jari.", perangkat: ["Fingerprint Scanner", "CPU", "Monitor", "HDD/SSD"] },
+        ];
+
+        const kategories = ["Input", "Proses", "Output", "Penyimpanan"];
+
+        const deviceImages = {
+          "Keyboard": "https://images.unsplash.com/photo-1595225476474-87563907a212?w=400&q=80",
+          "Mouse": "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=400&q=80",
+          "Monitor": "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=400&q=80",
+          "CPU": "https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?w=400&q=80",
+          "Printer": "https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?w=400&q=80",
+          "Scanner": "Scanner.png",
+          "Speaker": "https://images.unsplash.com/photo-1545454675-3531b543be5d?w=400&q=80",
+          "Webcam": "Webcam.png",
+          "GPU": "https://images.unsplash.com/photo-1591488320449-011701bb6704?w=400&q=80",
+          "RAM/SSD": "RAM.png",
+          "HDD/SSD": "ssddanhdd.png",
+          "HDD": "https://images.unsplash.com/photo-1531492746076-161ca9bcad58?w=400&q=80",
+          "Gamepad": "Joystick.png",
+          "Barcode Scanner": "Scanner2.png",
+          "Digitizer": "Digitizer.png",
+          "Plotter": "Plotter.png",
+          "Proyektor": "Proyektor.png",
+          "Flashdisk": "Flashdisk.png",
+          "Card Reader": "Cardreader.png",
+          "Memory Card": "MemoryCard.png",
+          "CD/DVD Drive": "CDDVDdrive.png",
+          "External HDD": "External Hard Disk.png",
+          "Network Storage": "Networkstorage.png",
+          "Light Pen": "Lightpen.png",
+          "Trackball": "Trackball.png",
+          "Fingerprint Scanner": "fingerprint.png",
+        };
+
+        function LKPDSistemKomputer() {
+          const [kelompok, setKelompok] = useState("");
+          const [nama1, setNama1] = useState("");
+          const [nama2, setNama2] = useState("");
+          
+          const [pengertianSys, setPengertianSys] = useState("");
+          const [pengertianHW, setPengertianHW] = useState("");
+          const [tabelJenis, setTabelJenis] = useState({
+            Input: { fungsi: "", contoh: "" },
+            Proses: { fungsi: "", contoh: "" },
+            Output: { fungsi: "", contoh: "" },
+            Penyimpanan: { fungsi: "", contoh: "" }
+          });
+
+          const [masalahUtama, setMasalahUtama] = useState("");
+          const [analisis, setAnalisis] = useState({ p1: "", p2: "", s1: "", s2: "", dampak: "" });
+          
+          const [draggedDevices, setDraggedDevices] = useState({});
+          const [isFinished, setIsFinished] = useState(false);
+          const [isExporting, setIsExporting] = useState(false);
+
+          const activeScenario = dataSkenario.find(s => s.id === parseInt(kelompok));
+
+          const handleDragStart = (e, device) => {
+            e.dataTransfer.setData("device", device);
+          };
+
+          const handleDrop = (e, kategori) => {
+            e.preventDefault();
+            const device = e.dataTransfer.getData("device");
+            if (!device) return;
+            
+            setDraggedDevices(prev => ({
+              ...prev,
+              [device]: { kategori, alasan: prev[device]?.alasan || "" }
+            }));
+          };
+
+          const updateAlasan = (device, alasan) => {
+            setDraggedDevices(prev => ({
+              ...prev,
+              [device]: { ...prev[device], alasan }
+            }));
+          };
+
+          const handleRemoveDevice = (device) => {
+            setDraggedDevices(prev => {
+              const newData = { ...prev };
+              delete newData[device];
+              return newData;
+            });
+          };
+
+          const handlePrintPDF = () => {
+            setIsExporting(true);
+            setTimeout(() => {
+              const element = document.getElementById('print-area');
+              
+              const originalStyle = element.getAttribute('style');
+              const targetWidth = 900; 
+              element.style.width = `${targetWidth}px`;
+              element.style.maxWidth = `${targetWidth}px`;
+              element.style.margin = '0'; 
+              
+              const targetHeight = element.offsetHeight;
+              
+              const opt = {
+                margin:       0, 
+                filename:     `LKPD_Informatika_Kelompok_${kelompok || 'X'}.pdf`,
+                image:        { type: 'jpeg', quality: 1.0 },
+                html2canvas:  { 
+                  scale: 2, 
+                  useCORS: true, 
+                  logging: false, 
+                  windowWidth: targetWidth, 
+                  width: targetWidth,       
+                  scrollY: 0, 
+                  scrollX: 0
+                },
+                jsPDF:        { 
+                  unit: 'px', 
+                  format: [targetWidth, targetHeight], 
+                  orientation: 'portrait',
+                  hotfixes: ["px_scaling"] 
+                }
+              };
+
+              const finishExport = () => {
+                if (originalStyle !== null) {
+                  element.setAttribute('style', originalStyle);
+                } else {
+                  element.removeAttribute('style');
+                }
+                setIsExporting(false);
+              };
+
+              if (window.html2pdf) {
+                window.html2pdf().set(opt).from(element).save().then(finishExport).catch(err => {
+                  console.error("Gagal export PDF", err);
+                  finishExport();
+                  window.print(); 
+                });
+              } else {
+                finishExport();
+                window.print();
+              }
+            }, 500);
+          };
+
+          if (isFinished) {
+            return (
+              <div className="min-h-screen bg-slate-100 p-2 md:p-6 font-sans text-slate-800 print:bg-white print:p-0">
+                <div id="print-area" className="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200 print:shadow-none print:border-none print:rounded-none [print-color-adjust:exact]">
+                  
+                  <div className="bg-gradient-to-r from-teal-600 to-indigo-700 py-3 px-6 text-white text-center">
+                    <h1 className="text-2xl font-bold uppercase tracking-wider mb-0.5 drop-shadow-md">Ringkasan LKPD</h1>
+                    <p className="text-teal-100 text-sm font-medium">Sistem Komputer - Perangkat Keras</p>
+                  </div>
+                  
+                  <div className="p-5 md:p-6 space-y-4">
+                    
+                    {/* Tujuan & Petunjuk Ringkas di PDF */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print:break-inside-avoid">
+                      <div className="bg-white p-4 rounded-xl border border-teal-200 shadow-sm flex flex-col justify-center">
+                        <h2 className="text-sm font-bold text-teal-800 mb-2 border-b-2 border-teal-200 pb-1 inline-block w-max">A. Tujuan Pembelajaran</h2>
+                        <ul className="list-decimal ml-4 space-y-1 text-slate-700 text-xs">
+                          <li>Menjelaskan pengertian sistem komputer dan perangkat keras. (C2)</li>
+                          <li>Mengklasifikasikan perangkat keras berdasarkan fungsi. (C3)</li>
+                          <li>Menganalisis peran perangkat keras dalam studi kasus. (C4)</li>
+                        </ul>
+                      </div>
+                      <div className="bg-white p-4 rounded-xl border border-amber-200 shadow-sm flex flex-col justify-center">
+                        <h2 className="text-sm font-bold text-amber-800 mb-2 border-b-2 border-amber-200 pb-1 inline-block w-max">B. Petunjuk Pengerjaan</h2>
+                        <ul className="list-decimal ml-4 space-y-1 text-slate-700 text-xs">
+                          <li>Kerjakan secara berkelompok (2 orang).</li>
+                          <li>Pilih nomor kelompok, isi bagian A, B, dan C.</li>
+                          <li>scannerand drop perangkat ke kategori yang tepat.</li>
+                          <li>Presentasikan hasil kerja kelompok.</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    {/* Baris 1: Identitas (Kiri) & Masalah (Kanan) */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      
+                      <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 shadow-sm print:break-inside-avoid flex flex-col justify-center">
+                        <h2 className="text-sm font-bold text-indigo-800 mb-2 border-b-2 border-indigo-200 pb-1 inline-block w-max">Identitas Kelompok</h2>
+                        <p className="font-bold text-lg text-indigo-950 mt-1">Kelompok {kelompok}</p>
+                        <p className="text-sm text-indigo-900 mt-1 font-medium">{nama1 || 'Nama 1'} & {nama2 || 'Nama 2'}</p>
+                      </div>
+
+                      <div className="md:col-span-2 bg-amber-50 p-4 rounded-xl border border-amber-100 shadow-sm print:break-inside-avoid">
+                        <h2 className="text-sm font-bold text-amber-800 mb-2 border-b-2 border-amber-200 pb-1 inline-block w-max">Skenario & Masalah Utama</h2>
+                        <div className="bg-white p-2.5 rounded-lg mb-2 border border-amber-200 border-l-4 border-l-amber-500 shadow-sm">
+                          <p className="italic text-sm text-slate-800 font-medium">"{activeScenario?.masalah}"</p>
+                        </div>
+                        <div className="bg-white p-2.5 rounded-lg border border-amber-200 shadow-sm flex items-start gap-2">
+                          <AlertTriangle size={16} className="text-amber-600 mt-0.5 shrink-0"/>
+                          <div>
+                            <p className="text-xs font-bold text-amber-900">Masalah Utama:</p>
+                            <p className="text-sm text-slate-700">{masalahUtama || "-"}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+
+                    {/* Baris 2: Pemahaman Dasar */}
+                    <div className="bg-sky-50 p-4 rounded-xl border border-sky-100 shadow-sm print:break-inside-avoid">
+                      <h2 className="text-sm font-bold text-sky-800 mb-3 border-b-2 border-sky-200 pb-1 inline-block w-max">Bagian A: Pemahaman Dasar</h2>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div className="bg-white p-3 rounded-lg border border-sky-100 shadow-sm">
+                          <p className="font-bold text-sky-900 mb-1 text-xs">Sistem Komputer:</p>
+                          <p className="text-slate-700 text-sm leading-relaxed">{pengertianSys || "-"}</p>
+                        </div>
+                        <div className="bg-white p-3 rounded-lg border border-sky-100 shadow-sm">
+                          <p className="font-bold text-sky-900 mb-1 text-xs">Perangkat Keras (Hardware):</p>
+                          <p className="text-slate-700 text-sm leading-relaxed">{pengertianHW || "-"}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {kategories.map(kat => (
+                          <div key={kat} className="bg-white p-3 rounded-lg border border-sky-200 shadow-sm relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-1 h-full bg-sky-400"></div>
+                            <span className="font-bold text-sky-800 text-sm mb-2 border-b border-sky-50 pb-1 flex items-center gap-1.5">
+                              <CheckCircle size={14} className="text-sky-500"/> {kat}
+                            </span>
+                            <p className="text-xs text-slate-700 mb-1 leading-tight"><span className="font-bold text-slate-900">Fungsi:</span> {tabelJenis[kat]?.fungsi || "-"}</p>
+                            <p className="text-xs text-slate-700 leading-tight"><span className="font-bold text-slate-900">Contoh:</span> {tabelJenis[kat]?.contoh || "-"}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Baris 3: Perangkat Terlibat */}
+                    <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 shadow-sm print:break-inside-avoid">
+                      <h2 className="text-sm font-bold text-emerald-800 mb-3 border-b-2 border-emerald-200 pb-1 inline-block w-max">Bagian B: Klasifikasi Perangkat Terlibat</h2>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {activeScenario?.perangkat.filter(device => draggedDevices[device]).map(device => (
+                          <div key={device} className="bg-white p-3 rounded-xl border border-emerald-200 shadow-sm flex flex-col gap-2.5">
+                            <div className="flex items-center gap-3 border-b border-emerald-50 pb-2">
+                              <img 
+                                src={deviceImages[device] || `https://placehold.co/100x100/e2e8f0/475569?text=${device}`} 
+                                alt={device} 
+                                crossOrigin="anonymous"
+                                className="w-12 h-12 object-cover rounded-lg shadow-sm border border-slate-200 shrink-0" 
+                              />
+                              <div>
+                                <h3 className="font-bold text-emerald-900 text-sm leading-tight">{device}</h3> 
+                                <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full font-bold mt-1 inline-block shadow-sm">
+                                  {draggedDevices[device]?.kategori || '-'}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 flex-grow">
+                              <p className="text-xs text-slate-700 leading-relaxed"><span className="font-bold text-slate-800 block mb-0.5">Alasan:</span> {draggedDevices[device]?.alasan || "-"}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Baris 4: Analisis & Solusi */}
+                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 shadow-sm print:break-inside-avoid">
+                      <h2 className="text-sm font-bold text-blue-800 mb-3 border-b-2 border-blue-200 pb-1 inline-block w-max">Bagian C: Analisis & Pemecahan Masalah</h2>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-white p-3.5 rounded-xl border border-blue-200 shadow-sm relative overflow-hidden">
+                          <div className="absolute top-0 left-0 w-full h-1 bg-blue-400"></div>
+                          <p className="font-bold text-blue-900 mb-2 text-xs flex items-center gap-1.5"><AlertTriangle size={14}/> Kemungkinan Penyebab:</p>
+                          <ul className="list-decimal ml-4 space-y-1 text-slate-700 text-xs font-medium">
+                            <li>{analisis.p1 || "-"}</li>
+                            <li>{analisis.p2 || "-"}</li>
+                          </ul>
+                        </div>
+                        <div className="bg-white p-3.5 rounded-xl border border-blue-200 shadow-sm relative overflow-hidden">
+                          <div className="absolute top-0 left-0 w-full h-1 bg-green-400"></div>
+                          <p className="font-bold text-blue-900 mb-2 text-xs flex items-center gap-1.5"><CheckCircle size={14}/> Langkah Solusi:</p>
+                          <ul className="list-decimal ml-4 space-y-1 text-slate-700 text-xs font-medium">
+                            <li>{analisis.s1 || "-"}</li>
+                            <li>{analisis.s2 || "-"}</li>
+                          </ul>
+                        </div>
+                        <div className="bg-white p-3.5 rounded-xl border border-blue-200 shadow-sm relative overflow-hidden">
+                           <div className="absolute top-0 left-0 w-full h-1 bg-red-400"></div>
+                          <p className="font-bold text-blue-900 mb-2 text-xs">Dampak Jika Perangkat Tidak Ada:</p>
+                          <p className="text-slate-700 text-xs leading-relaxed font-medium">{analisis.dampak || "-"}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {isExporting ? (
+                  <div className="mt-8 mb-10 flex justify-center text-teal-600 font-bold text-base md:text-xl items-center gap-3 bg-white p-5 rounded-2xl shadow border border-teal-100 max-w-2xl mx-auto animate-pulse">
+                    <Monitor size={28} className="animate-bounce" /> Menyusun dokumen ke dalam 1 lembar PDF...
+                  </div>
+                ) : (
+                  <div className="mt-8 mb-10 flex flex-wrap justify-center gap-4 no-print max-w-4xl mx-auto">
+                    <button 
+                      onClick={handlePrintPDF}
+                      className="bg-slate-800 hover:bg-slate-900 text-white px-6 py-4 rounded-xl font-bold transition-all shadow-lg flex items-center gap-2 text-sm md:text-base transform hover:scale-105 border-b-4 border-slate-950"
+                    >
+                      <Printer size={22} /> Download PDF (1 Lembar)
+                    </button>
+                    <button 
+                      onClick={() => window.open("https://drive.google.com/drive/folders/1c6PJMAi4DsZYDRe-hCPba2ePqeEVQiBV?usp=drive_link", "_blank")}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-4 rounded-xl font-bold transition-all shadow-lg flex items-center gap-2 text-sm md:text-base transform hover:scale-105 border-b-4 border-indigo-800"
+                    >
+                      <Send size={22} /> Kirim ke G-Drive
+                    </button>
+                    <button 
+                      onClick={() => setIsFinished(false)}
+                      className="bg-white hover:bg-slate-100 text-slate-700 px-5 py-4 rounded-xl font-bold transition-all shadow border-2 border-slate-200 flex items-center gap-2 text-sm md:text-base transform hover:scale-105"
+                    >
+                      Kembali Edit
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          return (
+            <div className="min-h-screen bg-slate-50 pb-28 font-sans text-slate-800">
+              <header className="bg-gradient-to-r from-teal-500 to-indigo-600 shadow-lg text-white py-12 px-4 relative overflow-hidden">
+                <div className="max-w-5xl mx-auto relative z-10 text-center">
+                  <h1 className="text-4xl md:text-5xl font-extrabold mb-4 drop-shadow-md">LKPD INTERAKTIF</h1>
+                  <h2 className="text-xl md:text-2xl font-medium text-teal-100">Sistem Komputer - Perangkat Keras (SMK)</h2>
+                </div>
+              </header>
+
+              <main className="max-w-5xl mx-auto px-4 -mt-6 space-y-8 relative z-20">
+                
+                {/* --- BAGIAN BARU: Tujuan Pembelajaran & Petunjuk Pengerjaan --- */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in-up">
+                    {/* Tujuan Pembelajaran */}
+                    <section className="bg-white rounded-3xl shadow-lg p-5 md:p-6 border-t-4 border-teal-500 flex flex-col justify-start">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="bg-teal-100 p-2 rounded-lg text-teal-600"><Target size={20}/></div>
+                            <h3 className="text-xl font-bold text-slate-800">A. Tujuan Pembelajaran</h3>
+                        </div>
+                        <ol className="list-decimal ml-5 space-y-2 text-slate-700 text-sm">
+                            <li>Murid mampu menjelaskan pengertian sistem komputer dan perangkat keras setelah menyimak video dan pemaparan materi dengan tepat. <span className="font-semibold text-teal-600">(C2-Menjelaskan)</span></li>
+                            <li>Murid mampu mengklasifikasikan jenis perangkat keras berdasarkan fungsi input, proses, output, dan penyimpanan melalui perangkat di laboratorium dengan tepat. <span className="font-semibold text-teal-600">(C3-Mengklasifikasikan)</span></li>
+                            <li>Murid mampu menganalisis peran perangkat keras dalam kehidupan sehari-hari melalui studi kasus dengan tepat disertai alasan yang logis. <span className="font-semibold text-teal-600">(C4-Menganalisis)</span></li>
+                        </ol>
+                    </section>
+
+                    {/* Petunjuk Pengerjaan */}
+                    <section className="bg-white rounded-3xl shadow-lg p-5 md:p-6 border-t-4 border-amber-500 flex flex-col justify-start">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="bg-amber-100 p-2 rounded-lg text-amber-600"><ListChecks size={20}/></div>
+                            <h3 className="text-xl font-bold text-slate-800">B. Petunjuk Pengerjaan</h3>
+                        </div>
+                        <ol className="list-decimal ml-5 space-y-2 text-slate-700 text-sm">
+                            <li>Kerjakan secara berkelompok (2 orang).</li>
+                            <li>Pilih nomor kelompok pada sistem LKPD digital.</li>
+                            <li>Sistem akan menampilkan skenario masalah kelompokmu.</li>
+                            <li>Isi bagian A (Pengertian), B (Masalah), dan C (Analisis).</li>
+                            <li>Drag and drop perangkat ke kategori yang tepat.</li>
+                            <li>Setelah selesai, presentasikan singkat 2 menit per kelompok.</li>
+                            <li className="font-bold text-red-500">Dilarang mencari jawaban di internet atau AI.</li>
+                        </ol>
+                    </section>
+                </div>
+                {/* --- AKHIR BAGIAN BARU --- */}
+
+                {/* Identitas Kelompok */}
+                <section className="bg-white rounded-3xl shadow-lg p-6 md:p-8 border-t-4 border-teal-500 animate-fade-in-up">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="bg-teal-100 p-3 rounded-xl text-teal-600"><User size={24}/></div>
+                    <h3 className="text-2xl font-bold text-slate-800">Identitas Kelompok</h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-600 mb-2">Pilih Nomor Kelompok</label>
+                      <select 
+                        className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl p-3.5 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all font-semibold cursor-pointer"
+                        value={kelompok} 
+                        onChange={(e) => {
+                          setKelompok(e.target.value);
+                          setDraggedDevices({}); 
+                        }}
+                      >
+                        <option value="">-- Pilih Kelompok --</option>
+                        {dataSkenario.map(s => (
+                          <option key={s.id} value={s.id}>Kelompok {s.id}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-600 mb-2">Nama Anggota 1</label>
+                      <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 focus:ring-2 focus:ring-teal-500 outline-none" placeholder="Masukkan nama..." value={nama1} onChange={(e) => setNama1(e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-600 mb-2">Nama Anggota 2</label>
+                      <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 focus:ring-2 focus:ring-teal-500 outline-none" placeholder="Masukkan nama..." value={nama2} onChange={(e) => setNama2(e.target.value)} />
+                    </div>
+                  </div>
+                </section>
+
+                {/* Bagian A */}
+                <section className="bg-white rounded-3xl shadow-lg p-6 md:p-8 border-t-4 border-indigo-500 animate-fade-in-up">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="bg-indigo-100 p-3 rounded-xl text-indigo-600"><FileText size={24}/></div>
+                    <h3 className="text-2xl font-bold text-slate-800">Bagian A: Pengertian & Klasifikasi</h3>
+                  </div>
+                  
+                  <div className="space-y-6">
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-2 text-lg">1. Apa itu Sistem Komputer?</label>
+                      <textarea rows="2" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Tuliskan pemahamanmu..." value={pengertianSys} onChange={(e) => setPengertianSys(e.target.value)}></textarea>
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-2 text-lg">2. Apa itu Perangkat Keras (Hardware)?</label>
+                      <textarea rows="2" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Tuliskan pemahamanmu..." value={pengertianHW} onChange={(e) => setPengertianHW(e.target.value)}></textarea>
+                    </div>
+                    
+                    <div className="pt-4">
+                      <label className="block font-bold text-slate-700 mb-4 text-lg">3. Lengkapi Tabel Fungsi & Contoh Perangkat</label>
+                      <div className="overflow-x-auto rounded-xl border border-slate-200">
+                        <table className="w-full text-left border-collapse min-w-[600px]">
+                          <thead>
+                            <tr className="bg-slate-100">
+                              <th className="p-4 font-bold text-slate-700 border-b border-slate-200 w-1/4">Jenis Perangkat</th>
+                              <th className="p-4 font-bold text-slate-700 border-b border-slate-200 w-1/2">Fungsi</th>
+                              <th className="p-4 font-bold text-slate-700 border-b border-slate-200 w-1/4">Contoh</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {kategories.map((kat, idx) => (
+                              <tr key={kat} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50"}>
+                                <td className="p-4 border-b border-slate-100 font-bold text-indigo-700">{kat}</td>
+                                <td className="p-4 border-b border-slate-100">
+                                  <input type="text" className="w-full bg-white border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500" placeholder={`Fungsi ${kat}...`} value={tabelJenis[kat].fungsi} onChange={(e) => setTabelJenis(prev => ({...prev, [kat]: {...prev[kat], fungsi: e.target.value}}))} />
+                                </td>
+                                <td className="p-4 border-b border-slate-100">
+                                  <input type="text" className="w-full bg-white border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500" placeholder={`Contoh ${kat}...`} value={tabelJenis[kat].contoh} onChange={(e) => setTabelJenis(prev => ({...prev, [kat]: {...prev[kat], contoh: e.target.value}}))} />
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Bagian B (Skenario) */}
+                <section className={`bg-white rounded-3xl shadow-lg p-6 md:p-8 border-t-4 border-amber-500 transition-opacity duration-500 ${!activeScenario ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="bg-amber-100 p-3 rounded-xl text-amber-600"><Monitor size={24}/></div>
+                    <h3 className="text-2xl font-bold text-slate-800">Bagian B: Skenario & Klasifikasi (Drag & Drop)</h3>
+                  </div>
+
+                  {!activeScenario ? (
+                    <div className="bg-slate-100 rounded-2xl p-10 text-center text-slate-500 border-2 border-dashed border-slate-300">
+                      <AlertTriangle size={48} className="mx-auto mb-4 opacity-50" />
+                      <p className="text-lg font-medium">Pilih Nomor Kelompok di atas untuk memunculkan Skenario Masalah.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-8">
+                      <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-6 border border-amber-200">
+                        <p className="text-sm font-bold text-amber-600 mb-2 uppercase tracking-wide">Skenario Masalah Anda:</p>
+                        <p className="text-2xl font-bold text-slate-800 italic leading-relaxed">"{activeScenario.masalah}"</p>
+                      </div>
+
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-2 text-lg">1. Apa masalah utama dalam skenario tersebut?</label>
+                        <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 focus:ring-2 focus:ring-amber-500 outline-none text-lg" placeholder="Tuliskan inti masalahnya..." value={masalahUtama} onChange={(e) => setMasalahUtama(e.target.value)} />
+                      </div>
+
+                      <div className="pt-6 border-t border-slate-200">
+                        <div className="flex justify-between items-end mb-4">
+                          <label className="block font-bold text-slate-700 text-lg">2. Drag & Drop Foto Perangkat Ke Kategori yang Tepat! (Pilih 3)</label>
+                          <span className="text-sm bg-slate-200 px-3 py-1 rounded-full font-bold text-slate-600">{Object.keys(draggedDevices).length} / 3 Terpilih</span>
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-4 p-5 bg-slate-100 rounded-2xl border-2 border-dashed border-slate-300 min-h-[140px] items-center justify-center">
+                          {activeScenario.perangkat.filter(device => !draggedDevices[device]).map((device) => (
+                            <div 
+                              key={device}
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, device)}
+                              className="bg-white p-3 pr-5 rounded-xl shadow-md border border-slate-200 flex items-center gap-3 cursor-grab hover:scale-105 transition-transform hover:shadow-lg active:cursor-grabbing"
+                            >
+                              <div className="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-slate-100 border border-slate-100">
+                                <img src={deviceImages[device] || `https://placehold.co/100x100/e2e8f0/475569?text=${device}`} alt={device} crossOrigin="anonymous" className="w-full h-full object-cover pointer-events-none" />
+                              </div>
+                              <div>
+                                 <span className="font-bold text-slate-700 block text-lg">{device}</span>
+                                 <GripVertical size={16} className="text-slate-400 mt-1 inline-block"/> <span className="text-xs text-slate-400">Tarik foto</span>
+                              </div>
+                            </div>
+                          ))}
+                          {activeScenario.perangkat.filter(device => !draggedDevices[device]).length === 0 && (
+                            <p className="text-slate-400 font-medium italic">Semua perangkat sudah dipindahkan ke kategori.</p>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                          {kategories.map(kat => (
+                            <div 
+                              key={kat}
+                              onDragOver={(e) => e.preventDefault()}
+                              onDrop={(e) => handleDrop(e, kat)}
+                              className="bg-slate-50 rounded-2xl p-4 border-2 border-dashed border-slate-300 min-h-[220px] transition-colors hover:bg-slate-100"
+                            >
+                              <h4 className="font-bold text-slate-600 text-center mb-4 border-b border-slate-200 pb-2">Area {kat}</h4>
+                              <div className="space-y-3">
+                                {Object.entries(draggedDevices)
+                                  .filter(([_, data]) => data.kategori === kat)
+                                  .map(([device, data]) => (
+                                    <div key={device} className="bg-white p-4 rounded-xl shadow-sm border border-emerald-200 flex flex-col gap-3 relative animate-fade-in-up">
+                                      <button onClick={() => handleRemoveDevice(device)} className="absolute -top-2 -right-2 bg-red-100 hover:bg-red-200 text-red-600 w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-sm transition-colors z-10 cursor-pointer">✕</button>
+                                      
+                                      <div className="flex items-center gap-4">
+                                        <img src={deviceImages[device] || `https://placehold.co/100x100/e2e8f0/475569?text=${device}`} alt={device} crossOrigin="anonymous" className="w-20 h-20 object-cover rounded-lg shadow-sm border border-slate-100" />
+                                        <span className="font-bold text-emerald-800 text-xl">{device}</span>
+                                      </div>
+                                      
+                                      <input 
+                                        type="text" 
+                                        className="w-full text-base bg-slate-50 border border-slate-200 rounded-lg p-3 focus:ring-2 focus:ring-emerald-400 outline-none"
+                                        placeholder="Tulis alasan memilih alat ini..."
+                                        value={data.alasan}
+                                        onChange={(e) => updateAlasan(device, e.target.value)}
+                                      />
+                                    </div>
+                                ))}
+                                {Object.entries(draggedDevices).filter(([_, data]) => data.kategori === kat).length === 0 && (
+                                  <div className="text-center text-slate-400 text-sm mt-8 opacity-70">
+                                    <ImageIcon size={40} className="mx-auto mb-2 opacity-50"/>
+                                    Tarik foto perangkat ke area ini
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </section>
+
+                {/* Bagian C (Analisis) */}
+                <section className={`bg-white rounded-3xl shadow-lg p-6 md:p-8 border-t-4 border-blue-500 transition-opacity duration-500 ${!activeScenario ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="bg-blue-100 p-3 rounded-xl text-blue-600"><Search size={24}/></div>
+                    <h3 className="text-2xl font-bold text-slate-800">Bagian C: Analisis Masalah</h3>
+                  </div>
+                  
+                  <div className="space-y-6">
+                    <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                      <label className="block font-bold text-slate-700 mb-3 text-lg">1. Mengapa masalah itu terjadi? (Tulis 2 kemungkinan penyebab)</label>
+                      <div className="space-y-3">
+                        <div className="flex gap-3"><span className="font-bold text-blue-500 mt-3 text-lg">a.</span><input type="text" className="w-full bg-white border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 text-lg" value={analisis.p1} onChange={(e) => setAnalisis({...analisis, p1: e.target.value})} placeholder="Penyebab pertama..."/></div>
+                        <div className="flex gap-3"><span className="font-bold text-blue-500 mt-3 text-lg">b.</span><input type="text" className="w-full bg-white border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 text-lg" value={analisis.p2} onChange={(e) => setAnalisis({...analisis, p2: e.target.value})} placeholder="Penyebab kedua..."/></div>
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                      <label className="block font-bold text-slate-700 mb-3 text-lg">2. Apa solusinya? (Tulis 2 langkah perbaikan)</label>
+                      <div className="space-y-3">
+                        <div className="flex gap-3"><span className="font-bold text-blue-500 mt-3 text-lg">a.</span><input type="text" className="w-full bg-white border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 text-lg" value={analisis.s1} onChange={(e) => setAnalisis({...analisis, s1: e.target.value})} placeholder="Solusi pertama..."/></div>
+                        <div className="flex gap-3"><span className="font-bold text-blue-500 mt-3 text-lg">b.</span><input type="text" className="w-full bg-white border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 text-lg" value={analisis.s2} onChange={(e) => setAnalisis({...analisis, s2: e.target.value})} placeholder="Solusi kedua..."/></div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-2 text-lg">3. Apa yang terjadi jika salah satu perangkat penting di atas tidak ada?</label>
+                      <textarea rows="3" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 focus:ring-2 focus:ring-blue-500 outline-none text-lg" placeholder="Tuliskan analisis dampaknya..." value={analisis.dampak} onChange={(e) => setAnalisis({...analisis, dampak: e.target.value})}></textarea>
+                    </div>
+                  </div>
+                </section>
+                
+              </main>
+
+              <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-200 p-5 flex justify-center z-50 no-print shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
+                <button 
+                  onClick={() => {
+                    if(!kelompok) return;
+                    if(Object.keys(draggedDevices).length < 3) return;
+                    setIsFinished(true);
+                    window.scrollTo(0,0);
+                  }}
+                  disabled={!activeScenario || Object.keys(draggedDevices).length < 3}
+                  className={`flex items-center gap-3 px-10 py-4 rounded-full font-extrabold text-xl shadow-xl transition-all transform hover:scale-105 ${activeScenario && Object.keys(draggedDevices).length >= 3 ? 'bg-gradient-to-r from-teal-500 to-indigo-600 text-white hover:shadow-indigo-500/40 cursor-pointer' : 'bg-slate-300 text-slate-500 cursor-not-allowed'}`}
+                >
+                  <Play size={24} className="fill-current"/> Selesai & Tampilkan Ringkasan Presentasi
+                </button>
+              </div>
+            </div>
+          );
+        }
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<LKPDSistemKomputer />);
+    </script>
+</body>
+</html>
